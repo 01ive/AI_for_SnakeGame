@@ -9,6 +9,7 @@ import json
 import time
 from datetime import datetime as dt
 import gc
+import os
 
 # Game imports
 from snake import SnakeGame
@@ -201,9 +202,12 @@ def train():
     game = SnakeGame()
     done = []
 
+    # If weights from previous trains is present, load it
+    if os.path.isfile('model_weights.pth'):
+        agent.model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+
     while True:
         state_old = agent.get_state(game)
-
 
         # 2. L'agent décide de l'action à réaliser
         final_move = agent.get_action(state_old)
@@ -234,7 +238,6 @@ def train():
         game_id = "partie_" + str(agent.n_games)
         log_iteration(game_id, state_old, final_move, reward, done[agent.n_games])
 
-
         if done_iteration:
             # Réinitialisation du jeu et mise à jour des statistiques
             game.reset()
@@ -243,6 +246,10 @@ def train():
             agent.n_games += 1
             print("Objets non collectés :", gc.collect())
             print('Game', agent.n_games, 'Score', score)
+            # save weight every 10 games
+            if agent.n_games % 10 == 0:
+                print('Save weights to model_weights.pth')
+                torch.save(agent.model.state_dict(), 'model_weights.pth')
 
 
 if __name__ == '__main__':
