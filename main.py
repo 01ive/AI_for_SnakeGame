@@ -12,7 +12,7 @@ import gc
 import os
 
 # Game imports
-from snake import SnakeGame
+from snake_api import SnakeApi
 from snake import Point
 from snake import Direction
 
@@ -199,7 +199,7 @@ class Agent:
 
 def train():
     agent = Agent()
-    game = SnakeGame()
+    game = SnakeApi()
     done = []
 
     # If weights from previous trains is present, load it
