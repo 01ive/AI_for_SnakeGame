@@ -3,8 +3,6 @@ from enum import Enum
 import random
 from collections import namedtuple
 
-GameSpeed = 10^5
-
 # Enumération pour la direction du serpent
 class Direction(Enum):
     RIGHT = 1
@@ -24,10 +22,12 @@ class SnakeGame:
         self.width = width
         self.height = height
         self.block_size = block_size
+        self._game_speed = 10^5
         self.display = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Snake")
         self.clock = pygame.time.Clock()
         self.reset()  # Initialisation de l'état du jeu
+
 
     def reset(self):
         """
@@ -47,7 +47,7 @@ class SnakeGame:
         self.frame_iteration = 0
         # Actualiser l'interface graphique
         self._update_ui()
-        self.clock.tick(GameSpeed)  # Régule la vitesse du jeu (10 FPS)
+        self.clock.tick(self._game_speed)  # Régule la vitesse du jeu (10 FPS)
 
     def _place_food(self):
         """

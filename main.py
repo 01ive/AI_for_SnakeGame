@@ -202,6 +202,9 @@ def train():
     game = SnakeApi()
     done = []
 
+    # Increase game speed
+    game.game_speed = game.game_speed * 10
+
     # If weights from previous trains is present, load it
     if os.path.isfile('model_weights.pth'):
         agent.model.load_state_dict(torch.load('model_weights.pth', weights_only=True))

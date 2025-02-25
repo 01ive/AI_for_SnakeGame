@@ -1,5 +1,5 @@
 import pygame
-from snake import Direction, SnakeGame, GameSpeed
+from snake import Direction, SnakeGame
 
 class SnakeApi(SnakeGame):
     def __init__(self, width=640, height=480, block_size=20):
@@ -57,7 +57,7 @@ class SnakeApi(SnakeGame):
 
         # Actualiser l'interface graphique
         self._update_ui()
-        self.clock.tick(GameSpeed)  # Régule la vitesse du jeu (10 FPS)
+        self.clock.tick(self._game_speed)  # Régule la vitesse du jeu (10 FPS)
         pygame.event.pump() #Vider la pile ou jsp quoi empêche que la fenêtre plante.
         return reward, game_over, self.score
         
@@ -65,3 +65,11 @@ class SnakeApi(SnakeGame):
         prev_distance = abs(self.headprev.x - self.food.x) + abs(self.headprev.y - self.food.y)
         new_distance = abs(self.head.x - self.food.x) + abs(self.head.y - self.food.y)
         return new_distance < prev_distance  # True si le serpent s'est rapproché
+    
+    @property
+    def game_speed(self):
+        return self._game_speed
+    
+    @game_speed.setter
+    def game_speed(self, value):
+        self._game_speed = value
