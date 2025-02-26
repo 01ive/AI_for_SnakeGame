@@ -12,10 +12,8 @@ import gc
 import os
 
 # Game imports
-from snake_api import SnakeApi
-from snake import Point
-from snake import Direction
-
+from snake_api import SnakeApi, EndOfSnakeGame
+from snake import Point, Direction
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -217,7 +215,13 @@ def train():
         #print(f"Action choisie : {final_move}")
 
         # 3. On réalise l'action et on récupère la récompense, l'état suivant et l'indicateur de fin de partie
-        reward, done_iteration, score = game.play_step(final_move)
+        try:
+            reward, done_iteration, score = game.play_step(final_move)
+        except EndOfSnakeGame:
+            # save weight every 10 games
+            print('Save weights to model_weights.pth')
+            torch.save(agent.model.state_dict(), 'model_weights.pth')
+            quit()
         #print(f"Game {agent.n_games} Score {game.score}")
         #print(f"Q-values: {agent.model(torch.tensor(state_old, dtype=torch.float))}")
         #print(f"Action choisie : {final_move}")
@@ -238,8 +242,8 @@ def train():
         agent.remember(state_old, final_move, reward, state_new, done)
 
         #6 MAJ des logs
-        game_id = "partie_" + str(agent.n_games)
-        log_iteration(game_id, state_old, final_move, reward, done[agent.n_games])
+        # game_id = "partie_" + str(agent.n_games)
+        # log_iteration(game_id, state_old, final_move, reward, done[agent.n_games])
 
         if done_iteration:
             # Réinitialisation du jeu et mise à jour des statistiques
@@ -249,10 +253,6 @@ def train():
             agent.n_games += 1
             print("Objets non collectés :", gc.collect())
             print('Game', agent.n_games, 'Score', score)
-            # save weight every 10 games
-            if agent.n_games % 10 == 0:
-                print('Save weights to model_weights.pth')
-                torch.save(agent.model.state_dict(), 'model_weights.pth')
 
 
 if __name__ == '__main__':

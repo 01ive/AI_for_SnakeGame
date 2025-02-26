@@ -1,6 +1,9 @@
 import pygame
 from snake import Direction, SnakeGame
 
+class EndOfSnakeGame(Exception):
+    pass
+
 class SnakeApi(SnakeGame):
     def __init__(self, width=640, height=480, block_size=20):
         super().__init__(width, height, block_size)
@@ -18,6 +21,12 @@ class SnakeApi(SnakeGame):
           - score (int) : Le score actuel.
         """
         self.frame_iteration += 1
+
+        # Gestion des événements clavier
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                raise EndOfSnakeGame
 
         # Déterminer la nouvelle direction en fonction de l'action choisie par l'IA
         clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
