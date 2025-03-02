@@ -1,5 +1,7 @@
 import pygame
-from snake import Direction, SnakeGame
+import numpy as np
+
+from snake import Point, Direction, SnakeGame
 
 class EndOfSnakeGame(Exception):
     pass
@@ -55,7 +57,7 @@ class SnakeApi(SnakeGame):
             return reward, game_over, self.score
 
         # Vérifier si la nourriture a été consommée
-        if self.is_closer_to_food():
+        if self._is_closer_to_food():
             reward = 5
         if self.head == self.food:
             self.score += 1
@@ -70,10 +72,56 @@ class SnakeApi(SnakeGame):
         pygame.event.pump() #Vider la pile ou jsp quoi empêche que la fenêtre plante.
         return reward, game_over, self.score
         
-    def is_closer_to_food(self):
+    def _is_closer_to_food(self):
         prev_distance = abs(self.headprev.x - self.food.x) + abs(self.headprev.y - self.food.y)
         new_distance = abs(self.head.x - self.food.x) + abs(self.head.y - self.food.y)
         return new_distance < prev_distance  # True si le serpent s'est rapproché
+
+    def get_state(self):
+        head = self.snake[0]
+        point_l = Point(head.x - self.block_size, head.y)
+        point_r = Point(head.x + self.block_size, head.y)
+        point_u = Point(head.x, head.y - self.block_size)
+        point_d = Point(head.x, head.y + self.block_size)
+
+        dir_l = self.direction == Direction.LEFT
+        dir_r = self.direction == Direction.RIGHT
+        dir_u = self.direction == Direction.UP
+        dir_d = self.direction == Direction.DOWN
+
+        state = [
+            # Danger tout droit
+            (dir_r and self._is_collision(point_r)) or
+            (dir_l and self._is_collision(point_l)) or
+            (dir_u and self._is_collision(point_u)) or
+            (dir_d and self._is_collision(point_d)),
+
+            # Danger à droite
+            (dir_u and self._is_collision(point_r)) or
+            (dir_d and self._is_collision(point_l)) or
+            (dir_l and self._is_collision(point_u)) or
+            (dir_r and self._is_collision(point_d)),
+
+            # Danger à gauche
+            (dir_d and self._is_collision(point_r)) or
+            (dir_u and self._is_collision(point_l)) or
+            (dir_r and self._is_collision(point_u)) or
+            (dir_l and self._is_collision(point_d)),
+
+            # Direction actuelle
+            dir_r,
+            dir_l,
+            dir_u,
+            dir_d,
+
+            # Position de la nourriture par rapport à la tête
+            self.food.x < self.head.x,  # nourriture à gauche
+            self.food.x > self.head.x,  # nourriture à droite
+            self.food.y < self.head.y,  # nourriture en haut
+            self.food.y > self.head.y   # nourriture en bas
+        ]
+
+        return np.array(state, dtype=int)
     
     @property
     def game_speed(self):
