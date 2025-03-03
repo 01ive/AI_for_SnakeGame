@@ -1,3 +1,8 @@
+# Standard imports
+import os
+import time
+import logging
+# Module imports
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,13 +10,8 @@ import torch.optim as optim
 import random
 from collections import deque
 import numpy as np
-import logging
-import time
-
-MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
-LR = 0.001
-EPSILON_INI = 60
+# Game imports
+from snake_api import EndOfSnakeGame
 
 class LinearQNet(nn.Module):    
     def __init__(self, input_size, hidden_size, output_size):
@@ -63,44 +63,94 @@ class QTrainer:
 
 
 class Agent:
-    def __init__(self):
-        self.n_games = 0
-        self.epsilon = 0  # Pour l'exploration
-        self.gamma = 0.9  # Facteur de discount
-        self.memory = deque(maxlen=MAX_MEMORY)  # Mémoire d'expérience
-        self.model = LinearQNet(input_size=11, hidden_size=128, output_size=3)
-        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+    MAX_MEMORY = 100_000
+    LR = 0.001
+    EPSILON_INI = 60
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+    def __init__(self, game, inference=True, nb_game=1):
+        self._game = game
+        self._inference = inference
+        self._nb_games = nb_game
+        self._n_games = 0
+        self._scores = []
+        self._score = 0
+        self._epsilon = 0  # Pour l'exploration
+        self._gamma = 0.9  # Facteur de discount
+        self._memory = deque(maxlen=self.MAX_MEMORY)  # Mémoire d'expérience
+        self._model = LinearQNet(input_size=11, hidden_size=128, output_size=3)
+        self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
 
-    def train_long_memory(self):
-        if len(self.memory) > BATCH_SIZE:
-            mini_sample = random.sample(self.memory, BATCH_SIZE)
-        else:
-            mini_sample = self.memory
-
-        states, actions, rewards, next_states, dones = zip(*mini_sample)
-        self.trainer.train_step(states, actions, rewards, next_states, dones)
-
-    def train_short_memory(self, state, action, reward, next_state, done):
-        self.trainer.train_step(state, action, reward, next_state, done)
-
-    def get_action(self, state):
+    def _get_action(self, state):
         t1 = time.time()
         # Epsilon décroissant pour favoriser l'exploitation au fil du temps
-        self.epsilon = EPSILON_INI - self.n_games
+        self._epsilon = self.EPSILON_INI - self._n_games
         final_move = [0, 0, 0]
-        if random.randint(0, 200) < self.epsilon:
+        if random.randint(0, 200) < self._epsilon:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
             state0 = torch.tensor(state, dtype=torch.float)
-            prediction = self.model(state0)
+            prediction = self._model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
         t2 = time.time()
         if t2 - t1 > 0.2 :
-            logging.debug("Temps de get_action : ", t2-t1)
+            logging.debug("Temps de get_action : {}".format(t2-t1))
         return final_move
+    
+    def _end_of_iteration(self):
+        # Réinitialisation du jeu et mise à jour des statistiques
+        self._game.reset()
+        self._n_games += 1
+        self._scores.append(self._score)
+        logging.info('Game {} score {}'.format(self._n_games, self._score))
+
+    def _end_of_game(self):
+        # save weight every 10 games
+        logging.debug('Save weights to model_weights.pth')
+        torch.save(self._model.state_dict(), 'model_weights.pth')
+        logging.info('Mean score: {}'.format(np.array(self._scores).mean()))
+        logging.info('Var score: {}'.format(np.array(self._scores).var()))
+        quit()
+
+    def train(self):
+        done = []
+        
+        # Increase game speed
+        self._game.game_speed = self._game.game_speed * 10
+
+        # If weights from previous trains is present, load it
+        if os.path.isfile('model_weights.pth'):
+            self._model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+
+        while self._n_games < self._nb_games:
+            state_old = self._game.get_state()
+
+            # 2. L'agent décide de l'action à réaliser
+            final_move = self._get_action(state_old)
+
+            # 3. On réalise l'action et on récupère la récompense, l'état suivant et l'indicateur de fin de partie
+            try:
+                reward, done_iteration, self._score = self._game.play_step(final_move)
+            except EndOfSnakeGame:
+                self._end_of_game()
+            
+            if self._inference:    
+                if done_iteration:
+                    self._end_of_iteration()
+                continue
+                
+            state_new = self._game.get_state()
+            done.append(done_iteration)
+
+            # 4. Entraînement à court terme (sur cette transition)
+            self._trainer.train_step(state_old, final_move, reward, state_new, done)
+
+            # 5. Stockage de la transition dans la mémoire d'expérience
+            self._memory.append((state_old, final_move, reward, state_new, done))
+
+            if done_iteration:
+                self._end_of_iteration()
+                
+        self._end_of_game()
 
