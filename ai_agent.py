@@ -8,10 +8,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import random
-from collections import deque
 import numpy as np
 # Game imports
 from snake_api import EndOfSnakeGame
+
 
 class LinearQNet(nn.Module):    
     def __init__(self, input_size, hidden_size, output_size):
@@ -23,6 +23,7 @@ class LinearQNet(nn.Module):
         x = F.relu(self.linear1(x))
         x = self.linear2(x)
         return x
+
 
 class QTrainer:
     def __init__(self, model, lr, gamma):
@@ -63,7 +64,6 @@ class QTrainer:
 
 
 class Agent:
-    MAX_MEMORY = 100_000
     LR = 0.001
     EPSILON_INI = 60
 
@@ -76,7 +76,6 @@ class Agent:
         self._score = 0
         self._epsilon = 0  # Pour l'exploration
         self._gamma = 0.9  # Facteur de discount
-        self._memory = deque(maxlen=self.MAX_MEMORY)  # Mémoire d'expérience
         self._model = LinearQNet(input_size=11, hidden_size=128, output_size=3)
         self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
 
@@ -145,9 +144,6 @@ class Agent:
 
             # 4. Entraînement à court terme (sur cette transition)
             self._trainer.train_step(state_old, final_move, reward, state_new, done)
-
-            # 5. Stockage de la transition dans la mémoire d'expérience
-            self._memory.append((state_old, final_move, reward, state_new, done))
 
             if done_iteration:
                 self._end_of_iteration()
