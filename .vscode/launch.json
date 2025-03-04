@@ -1,0 +1,31 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [    
+        {
+            "name": "Snake: play",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "args": ["-i", "-n", "100"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Snake: learn",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "args": ["-t", "-n", "100"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Snake: human play",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "snake.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}
