@@ -110,7 +110,10 @@ class Agent:
         torch.save(self._model.state_dict(), 'model_weights.pth')
         logging.info('Mean score: {}'.format(np.array(self._scores).mean()))
         logging.info('Var score: {}'.format(np.array(self._scores).var()))
-        quit()
+
+    @property
+    def scores(self):
+        return self._scores
 
     def train(self):
         done = []
@@ -132,7 +135,7 @@ class Agent:
             try:
                 reward, done_iteration, self._score = self._game.play_step(final_move)
             except EndOfSnakeGame:
-                self._end_of_game()
+                break
             
             if self._inference:    
                 if done_iteration:
@@ -149,4 +152,3 @@ class Agent:
                 self._end_of_iteration()
                 
         self._end_of_game()
-

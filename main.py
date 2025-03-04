@@ -1,8 +1,12 @@
 # Standard imports
 import sys
+import os
 import getopt
 from datetime import datetime as dt
 import logging
+import pickle
+# Module imports
+import plotly.graph_objects as go
 # Game imports
 from snake_api import SnakeApi
 # AI imports
@@ -38,3 +42,26 @@ if __name__ == '__main__':
     game = SnakeApi()
     agent = Agent(game, inference, nb_game)
     agent.train()
+
+    # Save the scores
+    if inference:
+        data_file = 'data_inference.pkl'
+    else:
+        data_file = 'data_train.pkl'
+    
+    if os.path.exists(data_file):
+        with open(data_file, 'rb') as f:
+            all_scores = pickle.load(f)
+    else:
+        all_scores = []
+
+    all_scores.extend(agent.scores)
+    
+    with open(data_file, 'wb') as f:
+        pickle.dump(all_scores, f)
+    
+    # Display score graph
+    x = list(range(len(all_scores)))
+    fig = go.Figure(data=go.Scatter(x=x, y=all_scores, mode='lines+markers'))
+    fig.write_html(DATE + '_score.html')
+    fig.show()
