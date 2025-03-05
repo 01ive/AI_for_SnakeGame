@@ -1,6 +1,5 @@
 # Standard imports
 import os
-import time
 import logging
 # Module imports
 import torch
@@ -70,6 +69,7 @@ class Agent:
     def __init__(self, game, inference=True, nb_game=1):
         self._game = game
         self._inference = inference
+        self._first_training = True
         self._nb_games = nb_game
         self._n_games = 0
         self._scores = []
@@ -80,11 +80,10 @@ class Agent:
         self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
 
     def _get_action(self, state):
-        t1 = time.time()
         # Epsilon décroissant pour favoriser l'exploitation au fil du temps
         self._epsilon = self.EPSILON_INI - self._n_games
         final_move = [0, 0, 0]
-        if random.randint(0, 200) < self._epsilon:
+        if (random.randint(0, 200) < self._epsilon) and not self._inference:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
@@ -92,9 +91,6 @@ class Agent:
             prediction = self._model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
-        t2 = time.time()
-        if t2 - t1 > 0.2 :
-            logging.debug("Temps de get_action : {}".format(t2-t1))
         return final_move
     
     def _end_of_iteration(self):
@@ -124,6 +120,7 @@ class Agent:
         # If weights from previous trains is present, load it
         if os.path.isfile('model_weights.pth'):
             self._model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+            self._first_training = False
 
         while self._n_games < self._nb_games:
             state_old = self._game.get_state()
