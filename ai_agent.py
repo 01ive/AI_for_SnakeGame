@@ -22,7 +22,19 @@ class LinearQNet(nn.Module):
         x = F.relu(self.linear1(x))
         x = self.linear2(x)
         return x
+    
+class DeepQNet(nn.Module):    
+    def __init__(self, input_size, hidden_size, output_size):
+        super(DeepQNet, self).__init__()
+        self.linear1 = nn.Linear(input_size, hidden_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, output_size)
 
+    def forward(self, x):
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = self.linear3(x)
+        return x
 
 class QTrainer:
     def __init__(self, model, lr, gamma):
@@ -65,8 +77,9 @@ class QTrainer:
 class Agent:
     LR = 0.001
     EPSILON_INI = 60
+    SPEEDUP_GAME = 100
 
-    def __init__(self, game, inference=True, nb_game=1):
+    def __init__(self, game, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet):
         self._game = game
         self._inference = inference
         self._first_training = True
@@ -76,14 +89,14 @@ class Agent:
         self._score = 0
         self._epsilon = 0  # Pour l'exploration
         self._gamma = 0.9  # Facteur de discount
-        self._model = LinearQNet(input_size=11, hidden_size=128, output_size=3)
+        self._model = class_model(input_size=11, hidden_size=hidden_size, output_size=3)
         self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
 
     def _get_action(self, state):
         # Epsilon décroissant pour favoriser l'exploitation au fil du temps
         self._epsilon = self.EPSILON_INI - self._n_games
         final_move = [0, 0, 0]
-        if (random.randint(0, 200) < self._epsilon) and not self._inference:
+        if (random.randint(0, 200) < self._epsilon) and self._first_training:
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
@@ -105,17 +118,18 @@ class Agent:
         logging.debug('Save weights to model_weights.pth')
         torch.save(self._model.state_dict(), 'model_weights.pth')
         logging.info('Mean score: {}'.format(np.array(self._scores).mean()))
-        logging.info('Var score: {}'.format(np.array(self._scores).var()))
+        logging.info('Max score: {}'.format(np.array(self._scores).max()))
+        logging.info('Standard deviation: {}'.format(np.array(self._scores).std()))
 
     @property
     def scores(self):
         return self._scores
 
-    def train(self):
+    def train(self, speed=SPEEDUP_GAME):
         done = []
         
         # Increase game speed
-        self._game.game_speed = self._game.game_speed * 10
+        self._game.game_speed = self._game.game_speed * speed
 
         # If weights from previous trains is present, load it
         if os.path.isfile('model_weights.pth'):

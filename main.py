@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 # Game imports
 from snake_api import SnakeApi
 # AI imports
-from ai_agent import Agent
+from ai_agent import Agent, LinearQNet, DeepQNet
 
 DATE = str(dt.now().year) + str(dt.now().month) + str(dt.now().day) +  str(dt.now().hour) + str(dt.now().minute) + str(dt.now().second)
 
@@ -40,8 +40,8 @@ if __name__ == '__main__':
             nb_game = int(arg)
 
     game = SnakeApi()
-    agent = Agent(game, inference, nb_game)
-    agent.train()
+    agent = Agent(game, inference, nb_game, 128, LinearQNet)
+    agent.train(10000)
 
     # Save the scores
     if inference:

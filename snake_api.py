@@ -9,6 +9,11 @@ class EndOfSnakeGame(Exception):
 class SnakeApi(SnakeGame):
     def __init__(self, width=640, height=480, block_size=20):
         super().__init__(width, height, block_size)
+        self._rewards = {
+            'collision': -10,
+            'self collision': -10,
+            'food': 10,
+            'closer_to_food': 5 }
 
     def play_step(self, action):
         """
@@ -53,15 +58,15 @@ class SnakeApi(SnakeGame):
         game_over = False
         if self._is_collision(): #or self.frame_iteration > 100 * len(self.snake):
             game_over = True
-            reward = -10
+            reward = self._rewards['collision']
             return reward, game_over, self.score
 
         # Vérifier si la nourriture a été consommée
         if self._is_closer_to_food():
-            reward = 5
+            reward = self._rewards['closer_to_food']
         if self.head == self.food:
             self.score += 1
-            reward = 10
+            reward = self._rewards['food']
             self._place_food()
         else:
             self.snake.pop()  # Supprimer la queue pour faire avancer le serpent
@@ -130,3 +135,11 @@ class SnakeApi(SnakeGame):
     @game_speed.setter
     def game_speed(self, value):
         self._game_speed = value
+
+    @property
+    def rewards(self):
+        return self._rewards
+    
+    @rewards.setter
+    def rewards(self, value):
+        self._rewards = value
