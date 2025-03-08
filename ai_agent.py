@@ -79,9 +79,10 @@ class Agent:
     EPSILON_INI = 60
     SPEEDUP_GAME = 100
 
-    def __init__(self, game, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet):
+    def __init__(self, game, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet, weight_file_name='model_weights.pth'):
         self._game = game
         self._inference = inference
+        self._weight_file_name = weight_file_name
         self._first_training = True
         self._nb_games = nb_game
         self._n_games = 0
@@ -115,8 +116,8 @@ class Agent:
 
     def _end_of_game(self):
         # save weight every 10 games
-        logging.debug('Save weights to model_weights.pth')
-        torch.save(self._model.state_dict(), 'model_weights.pth')
+        logging.debug('Save weights to ' + self._weight_file_name)
+        torch.save(self._model.state_dict(), self._weight_file_name)
         logging.info('Mean score: {}'.format(np.array(self._scores).mean()))
         logging.info('Max score: {}'.format(np.array(self._scores).max()))
         logging.info('Standard deviation: {}'.format(np.array(self._scores).std()))
@@ -132,8 +133,8 @@ class Agent:
         self._game.game_speed = self._game.game_speed * speed
 
         # If weights from previous trains is present, load it
-        if os.path.isfile('model_weights.pth'):
-            self._model.load_state_dict(torch.load('model_weights.pth', weights_only=True))
+        if os.path.isfile(self._weight_file_name):
+            self._model.load_state_dict(torch.load(self._weight_file_name, weights_only=True))
             self._first_training = False
 
         while self._n_games < self._nb_games:

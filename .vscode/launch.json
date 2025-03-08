@@ -17,7 +17,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "main.py",
-            "args": ["-t", "-n", "100"],
+            "args": ["-t", "-n", "50"],
             "console": "integratedTerminal"
         },
         {
@@ -25,6 +25,13 @@
             "type": "debugpy",
             "request": "launch",
             "program": "snake.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Snake: search best architecture",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "search_arch.py",
             "console": "integratedTerminal"
         }
     ]
