@@ -105,4 +105,6 @@ Agent(game, hidden_layer_size=128, network_type=LinearQNet)
 agent.train()
 ```
 
+Project forked from https://github.com/Geremm/Snake-AI-DeepLearning.git
+
 Copyright (c) 2025 Geremm & 01ive
