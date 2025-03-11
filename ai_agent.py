@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import random
 import numpy as np
+from collections import deque
 # Game imports
 from snake_api import EndOfSnakeGame
 
@@ -78,6 +79,8 @@ class Agent:
     LR = 0.001
     EPSILON_INI = 60
     SPEEDUP_GAME = 100
+    MAX_MEMORY = 100_000
+    BATCH_SIZE = 1000
 
     def __init__(self, game, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet, weight_file_name='model_weights.pth'):
         self._game = game
@@ -92,6 +95,7 @@ class Agent:
         self._gamma = 0.9  # Facteur de discount
         self._model = class_model(input_size=11, hidden_size=hidden_size, output_size=3)
         self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
+        self._memory = deque(maxlen=self.MAX_MEMORY)  # Mémoire d'expérience
 
     def _get_action(self, state):
         # Epsilon décroissant pour favoriser l'exploitation au fil du temps
@@ -112,6 +116,15 @@ class Agent:
         self._game.reset()
         self._n_games += 1
         self._scores.append(self._score)
+
+        # Entraînement à long terme (sur la mémoire d'expérience)
+        if len(self._memory) > self.BATCH_SIZE:
+            mini_sample = random.sample(self._memory, self.BATCH_SIZE)
+        else:
+            mini_sample = self._memory
+        states, actions, rewards, next_states, dones = zip(*mini_sample)
+        self._trainer.train_step(states, actions, rewards, next_states, dones)
+
         logging.info('Game {} score {}'.format(self._n_games, self._score))
 
     def _end_of_game(self):
@@ -159,6 +172,9 @@ class Agent:
 
             # 4. Entraînement à court terme (sur cette transition)
             self._trainer.train_step(state_old, final_move, reward, state_new, done)
+
+            # 5. Stockage de la transition dans la mémoire d'expérience
+            self._memory.append((state_old, final_move, reward, state_new, done))
 
             if done_iteration:
                 self._end_of_iteration()

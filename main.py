@@ -45,12 +45,12 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:],"htin:w:",["help", "train", "inference", "nb=", "weight="])
     except getopt.GetoptError:
-        print ('main.py -i <inputfile> -o <outputfile>')
+        print('main.py --train --inference --nb <N> --weight <file.pth>')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt in ('-h', "--help"):
-            print ('test.py --train <nbr game>')
+            print('main.py --train --inference --nb <N> --weight <file.pth>')
             sys.exit()
         elif opt in ("-t", "--train"):
             inference = False
@@ -62,7 +62,14 @@ if __name__ == '__main__':
             weight_file = int(arg)
 
     game = SnakeApi()
-    agent = Agent(game, inference, nb_game, 128, LinearQNet, weight_file)
+    game.rewards = {
+                    'collision': -10,
+                    'self collision': -10,
+                    'food': 10,
+                    'closer_to_food': 2
+                }
+    
+    agent = Agent(game, inference, nb_game, 1024, LinearQNet, weight_file)
     agent.train(10000)
 
     # Save the scores
