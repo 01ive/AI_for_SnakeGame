@@ -1,6 +1,6 @@
 # How does AI play the classical Snake Game ?
 
-This project is just for fun. Generative AI has been realised using generative AI but I can guess that it learns from the below ressources.
+This project is just for fun. It has been realised using generative AI but I can guess that it learns from the below ressources.
 
 So have a look to this original ressources:
 
@@ -94,10 +94,10 @@ agent.train()
 
 Several neural Network architectures are available:
 
-* LinearQNet (default): 2 linears layers
+* LinearQNet (default): 2 linear layers
 * DeepQNet: 3 linear layers
 
-You can also specify internal layers size using hidden_layer parameter of Agent constructor.
+You can also specify internal layers size using **hidden_layer** parameter of **Agent** constructor.
 
 ```python
 game = SnakeApi()
