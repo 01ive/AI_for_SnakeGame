@@ -70,7 +70,11 @@ if __name__ == '__main__':
                 }
     
     agent = Agent(game, inference, nb_game, 1024, LinearQNet, weight_file)
-    agent.train(10000)
+    try:
+        agent.train(10000)
+    except Exception as e:
+        logging.error(e)
+        sys.exit(1)
 
     # Save the scores
     all_scores = save_data(inference, out_dir, 'data', agent.scores)

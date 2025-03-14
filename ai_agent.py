@@ -118,19 +118,21 @@ class Agent:
         self._scores.append(self._score)
 
         # Entraînement à long terme (sur la mémoire d'expérience)
-        if len(self._memory) > self.BATCH_SIZE:
-            mini_sample = random.sample(self._memory, self.BATCH_SIZE)
-        else:
-            mini_sample = self._memory
-        states, actions, rewards, next_states, dones = zip(*mini_sample)
-        self._trainer.train_step(states, actions, rewards, next_states, dones)
+        if not self._inference:
+            if len(self._memory) > self.BATCH_SIZE:
+                mini_sample = random.sample(self._memory, self.BATCH_SIZE)
+            else:
+                mini_sample = self._memory
+            states, actions, rewards, next_states, dones = zip(*mini_sample)
+            self._trainer.train_step(states, actions, rewards, next_states, dones)
 
         logging.info('Game {} score {}'.format(self._n_games, self._score))
 
     def _end_of_game(self):
-        # save weight every 10 games
-        logging.debug('Save weights to ' + self._weight_file_name)
-        torch.save(self._model.state_dict(), self._weight_file_name)
+        # save weight
+        if not self._inference:
+            logging.debug('Save weights to ' + self._weight_file_name)
+            torch.save(self._model.state_dict(), self._weight_file_name)
         logging.info('Mean score: {}'.format(np.array(self._scores).mean()))
         logging.info('Max score: {}'.format(np.array(self._scores).max()))
         logging.info('Standard deviation: {}'.format(np.array(self._scores).std()))
@@ -149,6 +151,8 @@ class Agent:
         if os.path.isfile(self._weight_file_name):
             self._model.load_state_dict(torch.load(self._weight_file_name, weights_only=True))
             self._first_training = False
+        elif self._inference:
+            raise FileNotFoundError('No weight file found')
 
         while self._n_games < self._nb_games:
             state_old = self._game.get_state()
