@@ -1,0 +1,5 @@
+*.pkl
+*.log
+*.html
+__pycache__
+202*
