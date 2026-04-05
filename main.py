@@ -5,13 +5,19 @@ import getopt
 from datetime import datetime as dt
 import logging
 import pickle
+import torch.nn as nn
+import torch.nn.functional as F
+
+#Afficher ou non la fenetre du jeu
+if "--headless" in sys.argv:
+    os.environ["SDL_VIDEODRIVER"] = "dummy"
+
 # Module imports
 import plotly.graph_objects as go
 # Game imports
 from snake_api import SnakeApi
 # AI imports
 from ai_agent import Agent, LinearQNet, DeepQNet
-
 
 def save_data(inference, out_dir, architecture_name, score):
     if inference:
@@ -36,21 +42,21 @@ if __name__ == '__main__':
     nb_game = 1
     weight_file = 'model_weights.pth'
 
-    out_dir = DATE
+    out_dir = f"logs/{DATE}"
     os.mkdir(out_dir)
 
     logging.basicConfig(filename=os.path.join(out_dir, 'log_' + DATE + '.log'), encoding='utf-8', level=logging.DEBUG)
     logging.getLogger().addHandler(logging.StreamHandler())
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"htin:w:",["help", "train", "inference", "nb=", "weight="])
+        opts, args = getopt.getopt(sys.argv[1:],"htin:w:",["help", "train", "inference", "nb=", "weight=", "headless"])
     except getopt.GetoptError:
-        print('main.py --train --inference --nb <N> --weight <file.pth>')
+        print('main.py --train --inference --nb <N> --weight <file.pth> --headless')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt in ('-h', "--help"):
-            print('main.py --train --inference --nb <N> --weight <file.pth>')
+            print('main.py --train --inference --nb <N> --weight <file.pth> --headless')
             sys.exit()
         elif opt in ("-t", "--train"):
             inference = False
@@ -60,6 +66,8 @@ if __name__ == '__main__':
             nb_game = int(arg)
         elif opt in ("-w", "--weight"):
             weight_file = int(arg)
+        elif opt in ("--headless"):
+            pass    
 
     game = SnakeApi()
     game.rewards = {
@@ -69,8 +77,8 @@ if __name__ == '__main__':
                     'closer_to_food': 2
                 }
     
-    agent = Agent(game, inference, nb_game, 1024, LinearQNet, weight_file)
-    agent.train(10000)
+    agent = Agent(game, nn.MSELoss(), F.relu, inference, nb_game, 1024, LinearQNet, weight_file)
+    agent.train(10000000000000)
 
     # Save the scores
     all_scores = save_data(inference, out_dir, 'data', agent.scores)

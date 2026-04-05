@@ -14,36 +14,38 @@ from snake_api import EndOfSnakeGame
 
 
 class LinearQNet(nn.Module):    
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size, activation=F.relu):
         super(LinearQNet, self).__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, output_size)
+        self.activation = activation
 
     def forward(self, x):
-        x = F.relu(self.linear1(x))
+        x = self.activation(self.linear1(x))
         x = self.linear2(x)
         return x
     
 class DeepQNet(nn.Module):    
-    def __init__(self, input_size, hidden_size, output_size):
+    def __init__(self, input_size, hidden_size, output_size, activation=F.relu):
         super(DeepQNet, self).__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
         self.linear3 = nn.Linear(hidden_size, output_size)
+        self.activation = activation
 
     def forward(self, x):
-        x = F.relu(self.linear1(x))
-        x = F.relu(self.linear2(x))
+        x = self.activation(self.linear1(x))
+        x = self.activation(self.linear2(x))
         x = self.linear3(x)
         return x
 
 class QTrainer:
-    def __init__(self, model, lr, gamma):
+    def __init__(self, model, lr, gamma, criterion):
         self.model = model
         self.lr = lr
         self.gamma = gamma
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
-        self.criterion = nn.MSELoss()
+        self.criterion = criterion
 
     def train_step(self, state, action, reward, next_state, done):
         state = torch.tensor(np.array(state), dtype=torch.float)
@@ -82,7 +84,7 @@ class Agent:
     MAX_MEMORY = 100_000
     BATCH_SIZE = 1000
 
-    def __init__(self, game, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet, weight_file_name='model_weights.pth'):
+    def __init__(self, game, criterion=nn.MSELoss(), activation=F.relu, inference=True, nb_game=1, hidden_size=128, class_model=LinearQNet, weight_file_name='model_weights.pth'):
         self._game = game
         self._inference = inference
         self._weight_file_name = weight_file_name
@@ -93,8 +95,8 @@ class Agent:
         self._score = 0
         self._epsilon = 0  # Pour l'exploration
         self._gamma = 0.9  # Facteur de discount
-        self._model = class_model(input_size=11, hidden_size=hidden_size, output_size=3)
-        self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma)
+        self._model = class_model(input_size=11, hidden_size=hidden_size, output_size=3, activation=activation)
+        self._trainer = QTrainer(self._model, lr=self.LR, gamma=self._gamma, criterion=criterion)
         self._memory = deque(maxlen=self.MAX_MEMORY)  # Mémoire d'expérience
 
     def _get_action(self, state):

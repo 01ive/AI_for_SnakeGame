@@ -56,7 +56,7 @@ class SnakeApi(SnakeGame):
         # Vérifier les collisions ou une boucle infinie (pour éviter que le serpent tourne en rond trop longtemps)
         reward = 0
         game_over = False
-        if self._is_collision(): #or self.frame_iteration > 100 * len(self.snake):
+        if self._is_collision() or self.frame_iteration > 100 * len(self.snake):
             game_over = True
             reward = self._rewards['collision']
             return reward, game_over, self.score
@@ -68,6 +68,7 @@ class SnakeApi(SnakeGame):
             self.score += 1
             reward = self._rewards['food']
             self._place_food()
+            self.frame_iteration = 0
         else:
             self.snake.pop()  # Supprimer la queue pour faire avancer le serpent
 
