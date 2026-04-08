@@ -7,7 +7,8 @@ class EndOfSnakeGame(Exception):
     pass
 
 class SnakeApi(SnakeGame):
-    def __init__(self, width=640, height=480, block_size=20):
+    def __init__(self, headless,width=640, height=480, block_size=20):
+        self.headless = headless
         super().__init__(width, height, block_size)
         self._rewards = {
             'collision': -10,
@@ -73,9 +74,10 @@ class SnakeApi(SnakeGame):
             self.snake.pop()  # Supprimer la queue pour faire avancer le serpent
 
         # Actualiser l'interface graphique
-        self._update_ui()
-        self.clock.tick(self._game_speed)  # Régule la vitesse du jeu (10 FPS)
-        pygame.event.pump() #Vider la pile ou jsp quoi empêche que la fenêtre plante.
+        if not self.headless:
+            self._update_ui()
+            self.clock.tick(self._game_speed)  # Régule la vitesse du jeu (10 FPS)
+            pygame.event.pump() #Vider la pile ou jsp quoi empêche que la fenêtre plante.
         return reward, game_over, self.score
         
     def _is_closer_to_food(self):
