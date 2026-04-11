@@ -68,7 +68,7 @@ if __name__ == '__main__':
     game_speed = 0
 
     out_dir = f"logs/{DATE}"
-    os.mkdir(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
 
     logging.basicConfig(filename=os.path.join(out_dir, 'log_' + DATE + '.log'), encoding='utf-8', level=logging.DEBUG)
     logging.getLogger().addHandler(logging.StreamHandler())
